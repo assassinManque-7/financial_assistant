@@ -38,7 +38,7 @@ function App(){
 
     const data = await resp.json();
 
-    setRes(data.text);
+    setRes(data);
   }
 
   return (

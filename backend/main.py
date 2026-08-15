@@ -3,6 +3,8 @@ from services.gemma import ask_gemma
 
 from services.doc_reader import read_doc
 
+from services.gemma import ask_gemma
+
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
@@ -27,5 +29,9 @@ async def upload_pdf(file : UploadFile = File(...) ):
 
     doc_dict = read_doc(file)
 
-    return doc_dict
+    gemma_output = ask_gemma(doc_dict["text"])
+
+    onboarding_output = 
+
+    
 
