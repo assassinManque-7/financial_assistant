@@ -74,13 +74,15 @@ def ask_gemma(text):
       }
     """
 
-    prompt = f"""You are a financial compliance expert with a keen eye for fraudulent reports. analyze the given onboarding document for 
-    inconsistencies along with flags for approval, rejection or escalation. return a response precisely following the extration schema given
-    (choose the individual schema if the onboarding doc involves an individual & choose the business schema if it involves a business).
-    also return a confidence score.
-    onboarding document data : {text}.
-    extraction_schema_individual : {extraction_schema_individual}
-    extraction_schema_business : {extraction_schema_business}"""
+    prompt = f"""You are a financial compliance expert. Analyze the onboarding document below.
+
+    Return ONLY a single raw JSON object. No markdown. No backticks. No explanation. No analysis report. No text before or after the JSON.
+
+    Choose the individual schema if the document involves an individual, business schema if it involves a business. Include a confidence score.
+
+    Onboarding document: {text}
+    Schema (individual): {extraction_schema_individual}
+    Schema (business): {extraction_schema_business}"""
 
     resp = client.models.generate_content(
         model = "gemma-4-26b-a4b-it",
