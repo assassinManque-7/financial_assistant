@@ -38,7 +38,7 @@ function App(){
 
     const data = await resp.json();
 
-    setRes(data);
+    setRes(JSON.stringify(data, null, 4));
   }
 
   return (

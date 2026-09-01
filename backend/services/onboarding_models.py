@@ -19,7 +19,7 @@ from __future__ import annotations
 from datetime import date, datetime, timezone
 from enum import Enum
 from typing import Optional
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ValidationError
 
 
 # ---------------------------------------------------------------------------
@@ -239,27 +239,63 @@ def strip_quotes(gemma_op):
     return gemma_op.strip()
 
 
-def parse_gemma_op(clean_json):
-    
+def parse_gemma_op(clean_json, req_schema):
+    if req_schema == "individual":
+        model_cls = IndividualOnboardingProfile
+
+    elif req_schema == "business":
+        model_cls = BusinessOnboardingProfile
+
+    try:
+        valid_return = model_cls.model_validate_json(clean_json)
+        return valid_return
+
+    except ValidationError as e:
+        err_str = ""
+        for i in e.errors():
+            err_str += f'field : {i["loc"]}, input : {i["input"]}, message : {i["msg"]}\n'
+
+        raise ValueError(err_str)
     
 
 if __name__ == "__main__":
     # quick smoke test
-    biz = BusinessOnboardingProfile(
-        legal_name="Acme Pvt Ltd",
-        entity_type="private_limited",
-        beneficial_owners=[
-            BeneficialOwner(name="Jane Doe", ownership_pct=60, nationality="Indian"),
-            BeneficialOwner(name="John Roe", ownership_pct=40, nationality="Indian"),
-        ],
-    )
-    print(biz.model_dump_json(indent=2))
-    biz.apply_screening_result(
-        pep_status=False,
-        unsc_status=False,
-        uapa_status=False,
-        owner_screening={"Jane Doe": {"is_pep": True, "pep_position": "State MLA", "sanctions_match": False}},
-    )
-    print("has_pep_owner:", biz.has_pep_owner())
-    print("max_ownership_by_pep:", biz.max_ownership_by_pep())
-    print("screening_complete:", biz.is_screening_complete())
+    # biz = BusinessOnboardingProfile(
+    #     legal_name="Acme Pvt Ltd",
+    #     entity_type="private_limited",
+    #     beneficial_owners=[
+    #         BeneficialOwner(name="Jane Doe", ownership_pct=60, nationality="Indian"),
+    #         BeneficialOwner(name="John Roe", ownership_pct=40, nationality="Indian"),
+    #     ],
+    # )
+    # print(biz.model_dump_json(indent=2))
+    # biz.apply_screening_result(
+    #     pep_status=False,
+    #     unsc_status=False,
+    #     uapa_status=False,
+    #     owner_screening={"Jane Doe": {"is_pep": True, "pep_position": "State MLA", "sanctions_match": False}},
+    # )
+    # print("has_pep_owner:", biz.has_pep_owner())
+    # print("max_ownership_by_pep:", biz.max_ownership_by_pep())
+    # print("screening_complete:", biz.is_screening_complete())
+
+    #quick parsing test
+    valid_json = '''
+    {
+      "entity_type": "private_limited",
+      "legal_name": "Sundram Textiles Private Limited",
+      "trade_name": null,
+      "beneficial_owners": [
+        {"name": "Ramesh Kumar Iyengar", "ownership_pct": 58, "nationality": "Indian"},
+        {"name": "Lakshmi Prasanna Rao", "ownership_pct": 35, "nationality": "Indian"}
+      ],
+      "jurisdiction": "Karnataka, India",
+      "incorporation_number": "RC-KA-2019-98214",
+      "gst_id": "29ABCDE1234F1Z5",
+      "expected_monthly_volume": "hello",
+      "operating_countries": ["India", "United Arab Emirates", "Bangladesh"]
+    }'''
+
+    x = parse_gemma_op(valid_json, "business")
+
+    print(type(x))
